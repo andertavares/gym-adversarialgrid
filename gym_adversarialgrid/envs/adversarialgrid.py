@@ -1,4 +1,5 @@
 import gym
+import gym.spaces
 import numpy as np
 import sys
 from six import StringIO, b
@@ -111,7 +112,7 @@ class AdversarialGrid(gym.Env):
         # p, s, r, d = transitions[i]
         self.current_state = self.safe_exec(self.current_state, a)
         row, col = self.current_state  # just an alias
-        print("Moved to ")
+        print("Moved to %d, %d" % self.current_state)
         reward = 0
         if self.world[row][col] == 'H':  # hole gives negative reward
             reward = -1
@@ -122,14 +123,14 @@ class AdversarialGrid(gym.Env):
         done = self.world[row][col] == 'G'
 
         self.last_action = a
-        return self.s, reward, done, {"prob": 1}
+        return self.current_state, reward, done, {"prob": 1}
 
     def _render(self, mode='human', close=False):
         if close:
             return
         outfile = StringIO() if mode == 'ansi' else sys.stdout
 
-        row, col = self.s // self.ncols, self.s % self.ncols
+        row, col = self.current_state  # self.s // self.ncols, self.s % self.ncols
         desc = self.desc.tolist()
         desc = [[c.decode('utf-8') for c in line] for line in desc]
         desc[row][col] = utils.colorize(desc[row][col], "red", highlight=True)
