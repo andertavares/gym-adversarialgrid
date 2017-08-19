@@ -117,11 +117,16 @@ class AdversarialGrid(gym.Env):
         elif self.world[row][col] == 'G':  # goal, yay!
             reward = +1
 
-        # terminal test
-        done = self.world[row][col] == 'G'
+        # terminal test (goal or hole)
+        done = self.world[row][col] in 'GH'
 
         self.last_action = a
-        return self.current_state, reward, done, {"tile": "'{}'".format(self.world[row][col])}
+        info = {
+            "action_index": a,
+            "action_name": self.action_names[a],
+            "tile": "'{}'".format(self.world[row][col])
+        }
+        return self.current_state, reward, done, info
 
     def _render(self, mode='human', close=False):
         if close:
@@ -136,7 +141,7 @@ class AdversarialGrid(gym.Env):
             outfile.write("  ({})\n".format(self.action_names[self.last_action]))
         else:
             outfile.write("\n")
-        outfile.write("\n".join(''.join(line) for line in desc) + "\n")
+        outfile.write("\n".join(''.join(line) for line in desc) + "\n\n")
 
         if mode != 'human':
             return outfile
