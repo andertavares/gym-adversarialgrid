@@ -1,0 +1,1 @@
+from gym_adversarialgrid.envs.adversarialgrid import AdversarialGrid
