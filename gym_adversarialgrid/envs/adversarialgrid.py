@@ -77,7 +77,7 @@ class AdversarialGrid(gym.Env):
         self.desc = desc = np.asarray(desc, dtype='c')
         self.nrows, self.ncols = nrows, ncols = desc.shape
 
-        self.number_actions = 4  # number of actions
+        self.number_actions = len(self.action_effects)  # number of actions
         self.number_states = nrows * ncols  # number of states
 
         self.action_space = gym.spaces.Discrete(self.number_actions)
@@ -97,8 +97,8 @@ class AdversarialGrid(gym.Env):
         new_row, new_col = row + action_effect[0], col + action_effect[1]
 
         # ensures new coordinates are within boundaries
-        new_row = min(self.nrows, max(0, new_row))
-        new_col = min(self.ncols, max(0, new_col))
+        new_row = min(self.nrows - 1, max(0, new_row))
+        new_col = min(self.ncols - 1, max(0, new_col))
 
         return new_row, new_col
 
@@ -108,11 +108,9 @@ class AdversarialGrid(gym.Env):
         :param a:the action to execute (an integer)
         :return: tuple(state, reward, done, info)
         """
-        # transitions = self.P[self.s][a]
-        # p, s, r, d = transitions[i]
         self.current_state = self.safe_exec(self.current_state, a)
         row, col = self.current_state  # just an alias
-        print("Moved to %d, %d" % self.current_state)
+
         reward = 0
         if self.world[row][col] == 'H':  # hole gives negative reward
             reward = -1
@@ -123,7 +121,7 @@ class AdversarialGrid(gym.Env):
         done = self.world[row][col] == 'G'
 
         self.last_action = a
-        return self.current_state, reward, done, {"prob": 1}
+        return self.current_state, reward, done, {"tile": "'{}'".format(self.world[row][col])}
 
     def _render(self, mode='human', close=False):
         if close:
