@@ -4,7 +4,6 @@ import sys
 from six import StringIO, b
 
 from gym import utils
-from gym.envs.toy_text import discrete
 
 LEFT = 0
 DOWN = 1
@@ -47,6 +46,7 @@ class AdversarialGrid(gym.Env):
 
     The episode ends when you reach the goal or fall in a hole.
     You receive a reward of 1 if you reach the goal, and zero otherwise.
+    There's an adversary that disturbs some moves you make.
 
     """
 
