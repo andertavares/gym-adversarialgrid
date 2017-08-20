@@ -43,25 +43,33 @@ class AdversarialGrid(gym.Env):
     S : starting point, safe
     _ : frozen surface, safe
     H : hole, fall to your doom
-    G : goal, where the frisbee is located
+    G : goal, yay!
 
     The episode ends when you reach the goal or fall in a hole.
-    You receive a reward of 1 if you reach the goal, and zero otherwise.
+    You receive a reward of 1 if you reach the goal, -1 if fall in a hole and -0.01 otherwise.
     There's an adversary that disturbs some moves you make.
 
     """
 
     metadata = {'render.modes': ['human', 'ansi']}
 
+    # coordinate system is matrix-based (e.g. down increases the row)
     action_effects = {
         LEFT: (0, -1),
-        DOWN: (+1, 0),  # adds 1 to row (matrix notation)
+        DOWN: (+1, 0),
         RIGHT: (0, +1),
         UP: (-1, 0)
     }
 
     action_names = {
         LEFT: "Left", DOWN: "Down", RIGHT: "Right", UP: "Up"
+    }
+
+    rewards = {
+        'G': 1,
+        'H': -1,
+        'S': 0,
+        ' ': 0
     }
 
     def __init__(self, desc=None, map_name="4x4"):
@@ -111,20 +119,18 @@ class AdversarialGrid(gym.Env):
         self.current_state = self.safe_exec(self.current_state, a)
         row, col = self.current_state  # just an alias
 
-        reward = 0
-        if self.world[row][col] == 'H':  # hole gives negative reward
-            reward = -1
-        elif self.world[row][col] == 'G':  # goal, yay!
-            reward = +1
+        # retrieves the tile of current coordinates (' ', 'G' or 'H')
+        tile = self.world[row][col]
+        reward = self.rewards[tile]
 
         # terminal test (goal or hole)
-        done = self.world[row][col] in 'GH'
+        done = tile in 'GH'
 
         self.last_action = a
         info = {
             "action_index": a,
             "action_name": self.action_names[a],
-            "tile": "'{}'".format(self.world[row][col])
+            "tile": '{}'.format(tile)
         }
         return self.current_state, reward, done, info
 
