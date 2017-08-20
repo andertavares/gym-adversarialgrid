@@ -1,4 +1,7 @@
-class Benign(object):
+from agent import Agent
+
+
+class Benign(Agent):
     """
     A benign adversary that does not act
     """
@@ -7,15 +10,17 @@ class Benign(object):
         return 0  # noop
 
 
-class Stationary(object):
+class Random(Agent):
     """
-    Has a fixed, stationary (stochastic) policy
+    Has a random uniform policy
     """
 
-    def __init__(self, action_space, world):
-        self.world = world
-        self.nrows = len(world)
-        self.ncols = len(world[0])
+    def __init__(self, action_space):
+        """
+        Initializes a random adversary
+        :param action_space: an instance of gym.spaces.Discrete
+        """
+        self.action_space = action_space
 
     def act(self, observation):
         """
@@ -24,3 +29,20 @@ class Stationary(object):
         :param observation:
         :return:
         """
+        return self.action_space.sample()
+
+
+class Fixed(Agent):
+    """
+    An agent that always return the same action
+    """
+
+    def __init__(self, action=0):
+        """
+        Always select a fixed action
+        :param action:
+        """
+        self.action = action
+
+    def act(self, observation):
+        return self.action

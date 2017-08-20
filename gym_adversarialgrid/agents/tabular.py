@@ -3,9 +3,10 @@ import gym
 import gym.spaces.discrete as discrete
 from collections import defaultdict
 import numpy as np
+import agent
 
 
-class TabularQAgent(object):
+class TabularQAgent(agent.Agent):
     """
     Agent implementing tabular Q-learning.
 
@@ -34,20 +35,16 @@ class TabularQAgent(object):
         self.q = defaultdict(
             lambda: self.config["init_std"] * np.random.randn(self.action_n) + self.config["init_mean"])
 
-    def act(self, observation, eps=None):
+    def act(self, observation):
         """
         Selects an action via epsilon greedy 
         :param observation: current 'state'
-        :param eps: epsilon
 
         """
 
-        if eps is None:
-            eps = self.config["eps"]
-
         # epsilon greedy
         action = self.action_space.sample()
-        if np.random.random() > eps:
+        if np.random.random() > self.config["eps"]:
             # an argmax that breaks ties randomly: https://stackoverflow.com/a/42071648
             b = self.q[observation]
             action = np.random.choice(np.flatnonzero(b == b.max()))
@@ -55,15 +52,6 @@ class TabularQAgent(object):
         return action
 
     def learn(self, s, a, reward, sprime, done):
-        """
-        Updates Q of previous action and observation
-        :param s: current observation
-        :param a: action taken
-        :param reward: the reward signal
-        :param sprime: observation after taking a in s
-        :param done: is current state terminal?
-
-        """
         q = self.q  # alias
 
         # value of 'future' state
