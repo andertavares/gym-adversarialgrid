@@ -6,10 +6,16 @@ from six import StringIO, b
 
 from gym import utils
 
+# actions for the player
 LEFT = 0
 DOWN = 1
 RIGHT = 2
 UP = 3
+
+# actions for the adversary
+NOOP = 0
+INVERT = 1
+DEFLECT = 2
 
 MAPS = {
     "4x4": [
@@ -17,6 +23,12 @@ MAPS = {
         " H H",
         "   H",
         "H  G"
+    ],
+    "4x4_easy": [
+        "S   ",
+        "    ",
+        "  H ",
+        "   G"
     ],
     "8x8": [
         "SFFFFFFF",
@@ -61,10 +73,32 @@ class AdversarialGrid(gym.Env):
         UP: (-1, 0)
     }
 
-    action_names = {
+    agent_action_names = {
         LEFT: "Left", DOWN: "Down", RIGHT: "Right", UP: "Up"
     }
 
+    adversary_action_names = {
+        DEFLECT: "Deflect",
+        INVERT: "Invert"
+    }
+
+    # adds 90 degrees to intended direction
+    deflections = {
+        LEFT: DOWN,
+        DOWN: RIGHT,
+        RIGHT: UP,
+        UP: LEFT
+    }
+
+    # inverts intended direction
+    inversions = {
+        LEFT: RIGHT,
+        DOWN: UP,
+        RIGHT: LEFT,
+        UP: DOWN
+    }
+
+    # rewards from the agent's point of view
     rewards = {
         'G': 1,
         'H': -1,
@@ -129,7 +163,7 @@ class AdversarialGrid(gym.Env):
         self.last_action = a
         info = {
             "action_index": a,
-            "action_name": self.action_names[a],
+            "action_name": self.agent_action_names[a],
             "tile": '{}'.format(tile)
         }
         return self.current_state, reward, done, info
@@ -144,7 +178,7 @@ class AdversarialGrid(gym.Env):
         desc = [[c.decode('utf-8') for c in line] for line in desc]
         desc[row][col] = utils.colorize(desc[row][col], "red", highlight=True)
         if self.last_action is not None:
-            outfile.write("  ({})\n".format(self.action_names[self.last_action]))
+            outfile.write("  ({})\n".format(self.agent_action_names[self.last_action]))
         else:
             outfile.write("\n")
         outfile.write("\n".join(''.join(line) for line in desc) + "\n\n")
