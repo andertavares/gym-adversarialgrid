@@ -132,7 +132,11 @@ class AdversarialGrid(grid.Grid):
             outfile.write("  ({})\n".format(self.action_names[self.last_action]))
         else:
             outfile.write("\n")
-        outfile.write("\n".join(''.join(line) for line in desc) + "\n\n")
+
+        outfile.write("_" * (self.ncols + 2) + '\n')
+        outfile.write("\n".join('|%s|' % ''.join(line) for line in desc) + '\n')
+        outfile.write("‾" * (self.ncols + 2) + '\n\n')
+        # ^possible issue with overline character (Unicode: U+203E)
 
         if mode != 'human':
             return outfile
