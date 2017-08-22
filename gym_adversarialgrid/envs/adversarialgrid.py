@@ -79,8 +79,16 @@ class AdversarialGrid(grid.Grid):
         INVERT: inversions
     }
 
-    def __init__(self, desc=None, map_name="4x4", opponent='Random', *args, **kwargs):
-        super(AdversarialGrid, self).__init__(desc, map_name)
+    def __init__(self, opponent='Random', *args, **kwargs):
+        params = {
+            'desc': None,
+            'map': '3x4',
+        }
+
+        params.update(kwargs)
+
+        super(AdversarialGrid, self).__init__(params['desc'], params['map'])
+
 
         self.opp_action_space = gym.spaces.Discrete(2)  # NOOP/DEFLECT
         self.opponent = OPPONENTS[opponent](self.observation_space, self.opp_action_space, **kwargs)
