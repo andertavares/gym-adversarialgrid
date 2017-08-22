@@ -75,9 +75,9 @@ class Grid(gym.Env):
     }
 
     action_names = {
-        LEFT: "Left", DOWN: "Down",
-        RIGHT: "Right", UP: "Up",
-        STAY: "Stay",
+        LEFT: ">", DOWN: "v",
+        RIGHT: "<", UP: "^",
+        STAY: "x",
     }
 
     # rewards from the agent's point of view
