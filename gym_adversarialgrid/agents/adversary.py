@@ -13,19 +13,12 @@ class Benign(Agent):
 class Random(Agent):
     """
     Has a random uniform policy
-    """
 
-    def __init__(self, action_space):
-        """
-        Initializes a random adversary
-        :param action_space: an instance of gym.spaces.Discrete
-        """
-        self.action_space = action_space
+    """
 
     def act(self, observation):
         """
-        Try to drive the agent to the hole by deflecting
-        or inverting some of its obvious actions
+        Returns an action at random
         :param observation:
         :return:
         """

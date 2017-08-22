@@ -1,4 +1,14 @@
 class Agent(object):
+    def __init__(self, observation_space, action_space, **userconfig):
+        """
+        Initializes the agent
+        :param observation_space: an instance of gym.spaces.Discrete
+        :param action_space: an instance of gym.spaces.Discrete
+        :param userconfig: additional parameters (param=value)
+        """
+        self.observation_space = observation_space
+        self.action_space = action_space
+
     def act(self, observation):
         """
         Acts upon an observation
