@@ -75,8 +75,8 @@ class Grid(gym.Env):
     }
 
     action_names = {
-        LEFT: ">", DOWN: "v",
-        RIGHT: "<", UP: "^",
+        LEFT: "<", DOWN: "v",
+        RIGHT: ">", UP: "^",
         STAY: "x",
     }
 

@@ -1,15 +1,6 @@
 from gym_adversarialgrid.agents.agent import Agent
 
 
-class Benign(Agent):
-    """
-    A benign adversary that does not act
-    """
-
-    def act(self, observation):
-        return 0  # noop
-
-
 class Random(Agent):
     """
     Has a random uniform policy
@@ -33,12 +24,13 @@ class Fixed(Agent):
     An agent that always return the same action
     """
 
-    def __init__(self, action=0):
+    def __init__(self, *args, **kwargs):
         """
         Always select a fixed action
         :param action:
         """
-        self.action = action
+        super().__init__(*args, **kwargs)
+        self.action = kwargs['action']
 
     def act(self, observation):
         return self.action

@@ -13,6 +13,7 @@ DEFLECT = 2
 
 OPPONENTS = {
     "Random": adversary.Random,
+    "Fixed": adversary.Fixed,
 }
 
 
@@ -38,25 +39,22 @@ class AdversarialGrid(grid.Grid):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    # coordinate system is matrix-based (e.g. down increases the row)
-    """action_effects = {
-        LEFT: (0, -1),
-        DOWN: (+1, 0),
-        RIGHT: (0, +1),
-        UP: (-1, 0)
-    }
-
-    agent_action_names = {
-        LEFT: "Left", DOWN: "Down", RIGHT: "Right", UP: "Up"
-    }"""
-
     opponent_action_names = {
         NOOP: "No-op",
         DEFLECT: "Deflect",
         INVERT: "Invert"
     }
 
-    # adds 90 degrees to intended direction
+    # no-ops don't change action
+    no_ops = {
+        grid.LEFT: grid.LEFT,
+        grid.DOWN: grid.DOWN,
+        grid.RIGHT: grid.RIGHT,
+        grid.UP: grid.UP,
+        grid.STAY: grid.STAY,
+    }
+
+    # deflections add 90 degrees to intended direction
     deflections = {
         grid.LEFT: grid.DOWN,
         grid.DOWN: grid.RIGHT,
@@ -74,26 +72,18 @@ class AdversarialGrid(grid.Grid):
         grid.STAY: grid.STAY,  # cannot invert a stay
     }
 
-    # no-ops don't change action
-    no_ops = {
-        grid.LEFT: grid.LEFT,
-        grid.DOWN: grid.DOWN,
-        grid.RIGHT: grid.RIGHT,
-        grid.UP: grid.UP,
-        grid.STAY: grid.STAY,
-    }
-
+    # opponent action indexes this dict
     opponent_action_effects = {
         NOOP: no_ops,
         DEFLECT: deflections,
         INVERT: inversions
     }
 
-    def __init__(self, desc=None, map_name="4x4", opponent='Random'):
+    def __init__(self, desc=None, map_name="4x4", opponent='Random', *args, **kwargs):
         super(AdversarialGrid, self).__init__(desc, map_name)
 
         self.opp_action_space = gym.spaces.Discrete(2)  # NOOP/DEFLECT
-        self.opponent = OPPONENTS[opponent](self.observation_space, self.opp_action_space)
+        self.opponent = OPPONENTS[opponent](self.observation_space, self.opp_action_space, **kwargs)
 
     def safe_exec(self, origin, a):
         """
@@ -104,6 +94,7 @@ class AdversarialGrid(grid.Grid):
         :return:
         """
         row, col = origin
+
         # action effects are deterministic
         action_effect = self.action_effects[a]
         new_row, new_col = row + action_effect[0], col + action_effect[1]
@@ -112,6 +103,8 @@ class AdversarialGrid(grid.Grid):
         new_row = min(self.nrows - 1, max(0, new_row))
         new_col = min(self.ncols - 1, max(0, new_col))
 
+        print('origin, a, name, effect, new = {}, {}, {}, {}'.format(
+            origin, a, self.action_names[a], self.action_effects[a], (new_row, new_col)))
         return new_row, new_col
 
     def _step(self, a):
