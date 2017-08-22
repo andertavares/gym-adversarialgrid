@@ -116,7 +116,7 @@ class Grid(gym.Env):
         """
         for row_num, row in enumerate(self.world):
             for col_num, col in enumerate(row):
-                if self.world[row][col] == 'S':
+                if col == 'S':
                     return row_num, col_num
 
     def safe_exec(self, origin, a):
