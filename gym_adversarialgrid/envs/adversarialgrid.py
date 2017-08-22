@@ -103,8 +103,6 @@ class AdversarialGrid(grid.Grid):
         new_row = min(self.nrows - 1, max(0, new_row))
         new_col = min(self.ncols - 1, max(0, new_col))
 
-        print('origin, a, name, effect, new = {}, {}, {}, {}'.format(
-            origin, a, self.action_names[a], self.action_effects[a], (new_row, new_col)))
         return new_row, new_col
 
     def _step(self, a):
