@@ -1,49 +1,22 @@
 import gym
 import gym.spaces
-import numpy as np
 import sys
-from six import StringIO, b
-
 from gym import utils
-
-# actions for the player
-LEFT = 0
-DOWN = 1
-RIGHT = 2
-UP = 3
+from six import StringIO
+import gym_adversarialgrid.envs.grid as grid
+import gym_adversarialgrid.agents.adversary as adversary
 
 # actions for the adversary
 NOOP = 0
 INVERT = 1
 DEFLECT = 2
 
-MAPS = {
-    "4x4": [
-        "S   ",
-        " H H",
-        "   H",
-        "H  G"
-    ],
-    "4x4_easy": [
-        "S   ",
-        "    ",
-        "  H ",
-        "   G"
-    ],
-    "8x8": [
-        "SFFFFFFF",
-        "FFFFFFFF",
-        "FFFHFFFF",
-        "FFFFFHFF",
-        "FFFHFFFF",
-        "FHHFFFHF",
-        "FHFFHFHF",
-        "FFFHFFFG"
-    ],
+OPPONENTS = {
+    "Random": adversary.Random,
 }
 
 
-class AdversarialGrid(gym.Env):
+class AdversarialGrid(grid.Grid):
     """
     Inspired in frozen lake. The world is like:
 
@@ -66,7 +39,7 @@ class AdversarialGrid(gym.Env):
     metadata = {'render.modes': ['human', 'ansi']}
 
     # coordinate system is matrix-based (e.g. down increases the row)
-    action_effects = {
+    """action_effects = {
         LEFT: (0, -1),
         DOWN: (+1, 0),
         RIGHT: (0, +1),
@@ -75,55 +48,52 @@ class AdversarialGrid(gym.Env):
 
     agent_action_names = {
         LEFT: "Left", DOWN: "Down", RIGHT: "Right", UP: "Up"
-    }
+    }"""
 
-    adversary_action_names = {
+    opponent_action_names = {
+        NOOP: "No-op",
         DEFLECT: "Deflect",
         INVERT: "Invert"
     }
 
     # adds 90 degrees to intended direction
     deflections = {
-        LEFT: DOWN,
-        DOWN: RIGHT,
-        RIGHT: UP,
-        UP: LEFT
+        grid.LEFT: grid.DOWN,
+        grid.DOWN: grid.RIGHT,
+        grid.RIGHT: grid.UP,
+        grid.UP: grid.LEFT,
+        grid.STAY: grid.STAY  # cannot deflect a no-op
     }
 
     # inverts intended direction
     inversions = {
-        LEFT: RIGHT,
-        DOWN: UP,
-        RIGHT: LEFT,
-        UP: DOWN
+        grid.LEFT: grid.RIGHT,
+        grid.DOWN: grid.UP,
+        grid.RIGHT: grid.LEFT,
+        grid.UP: grid.DOWN,
+        grid.STAY: grid.STAY,  # cannot invert a stay
     }
 
-    # rewards from the agent's point of view
-    rewards = {
-        'G': 1,
-        'H': -1,
-        'S': 0,
-        ' ': 0
+    # no-ops don't change action
+    no_ops = {
+        grid.LEFT: grid.LEFT,
+        grid.DOWN: grid.DOWN,
+        grid.RIGHT: grid.RIGHT,
+        grid.UP: grid.UP,
+        grid.STAY: grid.STAY,
     }
 
-    def __init__(self, desc=None, map_name="4x4"):
-        self.current_state = (0, 0)
+    opponent_action_effects = {
+        NOOP: no_ops,
+        DEFLECT: deflections,
+        INVERT: inversions
+    }
 
-        if desc is None and map_name is None:
-            raise ValueError('Must provide either desc or map_name')
-        elif desc is None:
-            desc = MAPS[map_name]
-        self.world = desc
+    def __init__(self, desc=None, map_name="4x4", opponent='Random'):
+        super(AdversarialGrid, self).__init__(desc, map_name)
 
-        # desc has the 'world' as an array
-        self.desc = desc = np.asarray(desc, dtype='c')
-        self.nrows, self.ncols = nrows, ncols = desc.shape
-
-        self.number_actions = len(self.action_effects)  # number of actions
-        self.number_states = nrows * ncols  # number of states
-
-        self.action_space = gym.spaces.Discrete(self.number_actions)
-        self.observation_space = gym.spaces.Discrete(self.number_states)
+        self.opp_action_space = gym.spaces.Discrete(2)  # NOOP/DEFLECT
+        self.opponent = OPPONENTS[opponent](self.observation_space, self.opp_action_space)
 
     def safe_exec(self, origin, a):
         """
@@ -150,7 +120,13 @@ class AdversarialGrid(gym.Env):
         :param a:the action to execute (an integer)
         :return: tuple(state, reward, done, info)
         """
-        self.current_state = self.safe_exec(self.current_state, a)
+        # opponent's action
+        o = self.opponent.act(self.current_state)
+
+        resulting_action = self.opponent_action_effects[o][a]
+
+        # implements the resulting action
+        self.current_state = self.safe_exec(self.current_state, resulting_action)
         row, col = self.current_state  # just an alias
 
         # retrieves the tile of current coordinates (' ', 'G' or 'H')
@@ -160,10 +136,14 @@ class AdversarialGrid(gym.Env):
         # terminal test (goal or hole)
         done = tile in 'GH'
 
-        self.last_action = a
+        self.last_action = resulting_action
         info = {
-            "action_index": a,
-            "action_name": self.agent_action_names[a],
+            "a_idx": a,
+            "a_name": self.action_names[a],
+            "o_idx": o,
+            "o_name": self.opponent_action_names[o],
+            'r_idx': resulting_action,
+            'r_name': self.action_names[resulting_action],
             "tile": '{}'.format(tile)
         }
         return self.current_state, reward, done, info
@@ -178,7 +158,7 @@ class AdversarialGrid(gym.Env):
         desc = [[c.decode('utf-8') for c in line] for line in desc]
         desc[row][col] = utils.colorize(desc[row][col], "red", highlight=True)
         if self.last_action is not None:
-            outfile.write("  ({})\n".format(self.agent_action_names[self.last_action]))
+            outfile.write("  ({})\n".format(self.action_names[self.last_action]))
         else:
             outfile.write("\n")
         outfile.write("\n".join(''.join(line) for line in desc) + "\n\n")
@@ -187,6 +167,6 @@ class AdversarialGrid(gym.Env):
             return outfile
 
     def _reset(self):
-        self.current_state = 0, 0
+        self.current_state = self.initial_state()
         self.last_action = None
         return self.current_state
