@@ -1,9 +1,8 @@
 import gym
 import gym.spaces
-import grid
 import numpy as np
 import sys
-from agents.adversary import *
+import gym_adversarialgrid.agents.adversary as adversary
 from six import StringIO, b
 
 from gym import utils
@@ -46,11 +45,11 @@ MAPS = {
 }
 
 OPPONENTS = {
-    "Random": Random,
+    "Random": adversary.Random,
 }
 
 
-class ARATGrid(gym.envs):
+class ARATGrid(gym.Env):
     """
     An ARAT game (additive rewards, additive transition) on grids
     The world is like:
@@ -123,9 +122,9 @@ class ARATGrid(gym.envs):
         self.action_space = gym.spaces.Discrete(self.number_actions)
         self.observation_space = gym.spaces.Discrete(self.number_states)
 
-        self.opponent = OPPONENTS[opponent].__init__(self.action_space, self.observation_space)
+        self.opponent = OPPONENTS[opponent](self.observation_space, self.action_space)
 
-        self.player_control = 0.5
+        self.player_control = 1.0
 
         # information regarding last transition
         self.info = None
@@ -137,7 +136,7 @@ class ARATGrid(gym.envs):
         """
         for row_num, row in enumerate(self.world):
             for col_num, col in enumerate(row):
-                if self.world[row][col] == 'S':
+                if col == 'S':
                     return row_num, col_num
 
     def safe_exec(self, origin, a):
@@ -168,8 +167,8 @@ class ARATGrid(gym.envs):
         """
         # opponent's action
         o = self.opponent.act(self.current_state)
-
-        # determines whether player or opponent controls this transition
+        # determines whe
+        # ther player or opponent controls this transition
         player_controlled = np.random.random() < self.player_control
         implemented_action = a if player_controlled else o
 
@@ -186,11 +185,11 @@ class ARATGrid(gym.envs):
 
         self.last_action = implemented_action
         self.info = {
-            "action_index": a,
-            "action_name": self.action_names[a],
-            "opp_action_index": o,
-            "opp_action_name": self.action_names[o],
-            "who_controlled": "Player" if player_controlled else "Opponent",
+            "act_idx": a,
+            "act": self.action_names[a],
+            "opp_act_idx": o,
+            "opp_act": self.action_names[o],
+            "who_acted": "Player" if player_controlled else "Opponent",
             "tile": '{}'.format(tile)
         }
         return self.current_state, reward, done, self.info
@@ -205,8 +204,8 @@ class ARATGrid(gym.envs):
         desc = [[c.decode('utf-8') for c in line] for line in desc]
         desc[row][col] = utils.colorize(desc[row][col], "red", highlight=True)
         if self.last_action is not None:
-            outfile.write("  ({})\n".format(self.info))
-            # outfile.write("  ({})\n".format(self.action_names[self.last_action]))
+            # outfile.write("  ({})\n".format(self.info))
+            outfile.write("  ({})\n".format(self.action_names[self.last_action]))
 
         else:
             outfile.write("\n")

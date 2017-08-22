@@ -1,4 +1,4 @@
-from agent import Agent
+from gym_adversarialgrid.agents.agent import Agent
 
 
 class Benign(Agent):
@@ -15,6 +15,9 @@ class Random(Agent):
     Has a random uniform policy
 
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def act(self, observation):
         """
