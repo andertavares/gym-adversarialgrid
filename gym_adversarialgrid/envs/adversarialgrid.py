@@ -85,26 +85,6 @@ class AdversarialGrid(grid.Grid):
         self.opp_action_space = gym.spaces.Discrete(2)  # NOOP/DEFLECT
         self.opponent = OPPONENTS[opponent](self.observation_space, self.opp_action_space, **kwargs)
 
-    def safe_exec(self, origin, a):
-        """
-        Simulates the execution of an action,
-        preventing out of bounds
-        :param origin: tuple(row, col)
-        :param a:the action (an integer)
-        :return:
-        """
-        row, col = origin
-
-        # action effects are deterministic
-        action_effect = self.action_effects[a]
-        new_row, new_col = row + action_effect[0], col + action_effect[1]
-
-        # ensures new coordinates are within boundaries
-        new_row = min(self.nrows - 1, max(0, new_row))
-        new_col = min(self.ncols - 1, max(0, new_col))
-
-        return new_row, new_col
-
     def _step(self, a):
         """
         Receives the action of the agent and returns the outcome
