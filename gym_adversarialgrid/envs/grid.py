@@ -138,6 +138,25 @@ class Grid(gym.Env):
 
         return new_row, new_col
 
+    def print_deterministic_policy(self, policy, outstream=sys.stdout):
+        """
+        Prints a deterministic policy in the grid world
+        :param policy: dict(observation -> action)
+        :param outstream: the output stream to print into
+        :return:
+        """
+        # alias
+        names = self.action_names
+
+        # the 'world' where cells are replaced with the action described by the policy
+        desc = self.desc.tolist()
+        desc = [[names[policy[(r, c)]] for c, _ in enumerate(line)] for r, line in enumerate(desc)]
+
+        outstream.write("_" * (self.ncols + 2) + '\n')
+        outstream.write("\n".join('|%s|' % ''.join(line) for line in desc) + '\n')
+        outstream.write("‾" * (self.ncols + 2) + '\n\n')
+        # ^possible issue with overline character (Unicode: U+203E)
+
     def _step(self, a):
         """
         Receives the agent's action a, determines the opponent's action

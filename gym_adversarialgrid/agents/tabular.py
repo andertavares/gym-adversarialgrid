@@ -33,11 +33,13 @@ class TabularQAgent(agent.Agent):
             "n_iter": 10000}  # Number of iterations
         self.config.update(userconfig)
         self.q = defaultdict(
-            lambda: self.config["init_std"] * np.random.randn(self.action_n) + self.config["init_mean"])
+            lambda: self.config["init_std"] * np.random.randn(self.action_n) + self.config["init_mean"]
+        )
 
     def act(self, observation):
         """
-        Selects an action via epsilon greedy 
+        Selects an action via epsilon greedy
+        If action values are equal, ties are broken randomly
         :param observation: current 'state'
 
         """
@@ -50,6 +52,20 @@ class TabularQAgent(agent.Agent):
             action = np.random.choice(np.flatnonzero(b == b.max()))
 
         return action
+
+    def greedy_policy(self):
+        """
+        Returns the greedy (deterministic) policy of this agent.
+        Differently from self.act, this method breaks ties deterministically via np.argmax
+        :return:
+        """
+
+        policy = defaultdict(lambda: 0)
+
+        for entry, values in self.q.items():
+            policy[entry] = np.argmax(self.q[entry])
+
+        return policy
 
     def learn(self, s, a, reward, sprime, done):
         q = self.q  # alias
