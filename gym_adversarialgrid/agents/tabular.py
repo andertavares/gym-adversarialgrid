@@ -5,7 +5,7 @@ import numpy as np
 import gym_adversarialgrid.agents.agent as agent
 
 
-class TabularQAgent(agent.Agent):
+class TabularQAgent(agent.LearningAgent):
     """
     Agent implementing tabular Q-learning.
 
@@ -76,12 +76,3 @@ class TabularQAgent(agent.Agent):
         # applies update rule: Q(s,a) = Q(s,a) + alpha(r + gamma* max_{a'}Q(s',a') - Q(s,a))
         newq = q[s][a] + self.config["learning_rate"] * (reward + self.config["discount"] * future - q[s][a])
         q[s][a] = newq
-
-    def train(self, env):
-        config = self.config
-        observation = env.reset()
-        for t in range(config["n_iter"]):
-            action = self.act(observation)
-            next_obs, reward, done, _ = env.step(action)
-            self.learn(observation, action, reward, next_obs, done)
-            observation = next_obs if not done else env.reset()
