@@ -1,9 +1,8 @@
 # A tabular Q-learning agent
-import gym
 import gym.spaces.discrete as discrete
 from collections import defaultdict
 import numpy as np
-import agent
+import gym_adversarialgrid.agents.agent as agent
 
 
 class TabularQAgent(agent.Agent):
@@ -13,6 +12,7 @@ class TabularQAgent(agent.Agent):
     """
 
     def __init__(self, observation_space, action_space, **userconfig):
+        super(TabularQAgent, self).__init__(observation_space, action_space, **userconfig)
         if not isinstance(observation_space, discrete.Discrete):
             raise UnsupportedSpace(
                 'Observation space {} incompatible with {}. (Only supports Discrete observation spaces.)'.format(
@@ -21,8 +21,8 @@ class TabularQAgent(agent.Agent):
             raise UnsupportedSpace(
                 'Action space {} incompatible with {}. (Only supports Discrete action spaces.)'.format(action_space,
                                                                                                        self))
-        self.observation_space = observation_space
-        self.action_space = action_space
+        # self.observation_space = observation_space
+        # self.action_space = action_space
         self.action_n = action_space.n
         self.config = {
             "init_mean": 0.0,  # Initialize Q values with this mean
