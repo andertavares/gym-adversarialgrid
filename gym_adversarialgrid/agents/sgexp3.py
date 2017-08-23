@@ -45,12 +45,20 @@ class SGExp3(tabular.TabularQAgent):
         self.gamma = kwargs['gamma'] if 'gamma' in kwargs else 0.2
         self.discount = kwargs['discount'] if 'discount' in kwargs else 0.9
 
-        self.policy = defaultdict(lambda: [0] * self.action_space.n)
+        n_actions = self.action_space.n
+
+        # cannot initialize q with zeroes
+        self.q = defaultdict(
+            lambda: [0.01] * n_actions
+        )
+
+        # policy initialized as uniformly random
+        self.policy = defaultdict(lambda: [1.0 / n_actions] * n_actions)
 
     def calculate_policy(self, state):
         """
         Calculates the policy for a given state and returns it
-        :param state: 
+        :param state:
         :return: list(float) the policy (probability vector) for that state
         """
         # short aliases
@@ -63,8 +71,9 @@ class SGExp3(tabular.TabularQAgent):
 
         # the policy is a probability vector, giving the probability of each action
         # pi(s, . ) = [(1 - gamma)*q(s,a) + gamma / n] - for each action
-        pi_s = [((1 - g) * value / sum_weights) + (g / n) for a, value in enumerate(self.q[s])]
-
+        # print(state, pi_s, self.q[s])
+        pi_s = [((1 - g) * value / sum_weights) + (g / n) for value in self.q[s]]
+        # print(state, pi_s)
         return pi_s
 
     def act(self, observation):
