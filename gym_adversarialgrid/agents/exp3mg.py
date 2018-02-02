@@ -5,7 +5,7 @@ import math
 import numpy as np
 
 
-class SGExp3(tabular.TabularQAgent):
+class Exp3MG(tabular.TabularQAgent):
     """
     Extends Exp3 (Auer et. al 1995) with the notion of state.
     The implementation of Exp3 we are extending is the one shown in Auer et. al 2002.
@@ -23,7 +23,7 @@ class SGExp3(tabular.TabularQAgent):
     """
 
     def __init__(self, *args, **kwargs):
-        super(SGExp3, self).__init__(*args, **kwargs)
+        super(Exp3MG, self).__init__(*args, **kwargs)
 
         self.gamma = kwargs['gamma'] if 'gamma' in kwargs else 0.07
         self.lrn_rate = kwargs['lrn_rate'] if 'lrn_rate' in kwargs else 0.1
