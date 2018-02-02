@@ -1,25 +1,8 @@
 import gym_adversarialgrid.agents.tabular as tabular
+from gym_adversarialgrid.agents.util import categorical_draw
 from collections import defaultdict
-import random
 import math
-
-
-def categorical_draw(probabilities):
-    """
-    Selects an option with a roulette-like process
-    :param probabilities:
-    :return:
-    """
-    z = random.random()
-    cum_prob = 0.0
-
-    for choice, prob in enumerate(probabilities):
-        cum_prob += prob
-        if cum_prob > z:
-            return choice
-
-    print('Warning: categorical_draw reached its end')
-    return len(probabilities) - 1  # I think code should not reach here
+import numpy as np
 
 
 class SGExp3(tabular.TabularQAgent):
@@ -42,18 +25,25 @@ class SGExp3(tabular.TabularQAgent):
     def __init__(self, *args, **kwargs):
         super(SGExp3, self).__init__(*args, **kwargs)
 
-        self.gamma = kwargs['gamma'] if 'gamma' in kwargs else 0.2
+        self.gamma = kwargs['gamma'] if 'gamma' in kwargs else 0.07
+        self.lrn_rate = kwargs['lrn_rate'] if 'lrn_rate' in kwargs else 0.1
         self.discount = kwargs['discount'] if 'discount' in kwargs else 0.9
 
         n_actions = self.action_space.n
 
-        # cannot initialize q with zeroes
+        # lazy initialization -- each state will be assigned a vector of ones in the first time
         self.q = defaultdict(
-            lambda: [0.01] * n_actions
+            # lambda: [0.01] * n_actions
+            lambda: [1.] * n_actions
+        )
+
+        self.weights = defaultdict(
+            lambda: [1.] * n_actions
         )
 
         # policy initialized as uniformly random
         self.policy = defaultdict(lambda: [1.0 / n_actions] * n_actions)
+        # self.policy = [self.calculate_policy(s) for s in self.observation]
 
     def calculate_policy(self, state):
         """
@@ -67,12 +57,10 @@ class SGExp3(tabular.TabularQAgent):
         n = self.action_space.n  # n stands for the number of actions
         pi_s = self.policy[state]  # pi_s stands for the policy in state s
 
-        sum_weights = sum(self.q[s])
+        sum_weights = sum(self.weights[s])
 
         # the policy is a probability vector, giving the probability of each action
-        # pi(s, . ) = [(1 - gamma)*q(s,a) + gamma / n] - for each action
-        # print(state, pi_s, self.q[s])
-        pi_s = [((1 - g) * value / sum_weights) + (g / n) for value in self.q[s]]
+        pi_s = [((1 - g) * w / sum_weights) + (g / n) for w in self.weights[s]]
         # print(state, pi_s)
         return pi_s
 
@@ -82,25 +70,48 @@ class SGExp3(tabular.TabularQAgent):
 
     def learn(self, s, a, reward, sprime, done):
         # aliases:
-        pi_sp = self.policy[sprime]  # the policy for the next state
-        q_sp = self.q[sprime]  # the action values for next state
+        pi_sp = self.calculate_policy(sprime)
+        q = self.q  # alias for the action value function
         n = self.action_space.n  # the number of actions
 
-        # value of next state, it is zero if current state is terminal
-        future = sum([pi_sp[ap] * value for ap, value in enumerate(q_sp)]) if not done else 0
+        # estimation of the expected value of s' -- it is zero if current state is terminal
+        future = sum([pi_sp[aprime] * value for aprime, value in enumerate(q[sprime])]) if not done else 0
 
-        # x is a value to be scaled and weighted by its probability
-        x = reward + self.discount * future
+        # minimax-Q-like update:
+        q[s][a] = q[s][a] + self.lrn_rate * (reward + self.discount * future - q[s][a])
+
+        # q is then fed as Exp3's reward -- x is a value to be scaled and weighted by its probability
+        x = q[s][a]
 
         # scales x to [0, 1] - assuming minimum reward is -1 and max reward is +1
         # rescaling as per https://en.wikipedia.org/wiki/Feature_scaling#Rescaling
-        max_x = 1 + self.discount
-        min_x = -1 - self.discount
+        max_x = 1  # + self.discount
+        min_x = -1  # - self.discount
 
         scaled_x = (x - min_x) / (max_x - min_x)
 
-        # weights the value by its probability
+        if not 0 <= scaled_x <= 1:
+            print("WARNING! scaled_x=%f out of bounds!" % scaled_x)
+
+        # weights the value by its probability -- estimates the reward
         x_hat = scaled_x / self.policy[s][a]
 
-        # finally updates the value
-        self.q[s][a] = self.q[s][a] * math.exp(self.gamma * x_hat / n)
+        # finally updates the weight
+        # print('q(s,a), r, f, x, ~x, ^x = %.3f, %3f, %.3f, %.3f, %.3f, %.3f' % (self.q[s][a], future, reward, x, scaled_x, x_hat))
+        self.weights[s][a] *= math.exp(self.gamma * x_hat / n)
+
+    def greedy_policy(self):
+        """
+        Returns the greedy (deterministic) policy of this agent.
+        Differently from regular Tabular agents, the greedy policy is related to the weights, not the
+        action-value function
+        :return:
+        """
+        # print(self.weights)
+        policy = defaultdict(lambda: 0)
+
+        for entry, values in self.weights.items():
+            policy[entry] = np.argmax(self.weights[entry])
+            # print(policy)
+
+        return policy
