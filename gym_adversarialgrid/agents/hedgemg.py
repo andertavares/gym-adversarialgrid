@@ -22,9 +22,9 @@ class HedgeMG(exp3mg.Exp3MG):
     def __init__(self, *args, **kwargs):
         super(HedgeMG, self).__init__(*args, **kwargs)
 
-        self.gamma = kwargs['gamma'] if 'gamma' in kwargs else 0.07
-        self.lrn_rate = kwargs['lrn_rate'] if 'lrn_rate' in kwargs else 0.1
-        self.discount = kwargs['discount'] if 'discount' in kwargs else 0.9
+        self.config['gamma'] = 0.07  # inits with a default value
+
+        self.config.update(kwargs)
 
         self.weights = defaultdict(
             lambda: [1.0 / self.action_space.n] * self.action_space.n
@@ -38,12 +38,15 @@ class HedgeMG(exp3mg.Exp3MG):
         pi_sp = self.calculate_policy(sprime)
         q = self.q  # alias for the action value function
         n = self.action_space.n  # the number of actions
+        lrn_rate = self.config['learning_rate']
+        discount = self.config['discount']
+        gamma = self.config['gamma']
 
         # estimation of the expected value of s' -- it is zero if current state is terminal
         future = sum([pi_sp[aprime] * value for aprime, value in enumerate(q[sprime])]) if not done else 0
 
         # minimax-Q-like update:
-        q[s][a] = q[s][a] + self.lrn_rate * (reward + self.discount * future - q[s][a])
+        q[s][a] = q[s][a] + lrn_rate * (reward + discount * future - q[s][a])
 
         for action in range(self.action_space.n):
             x = q[s][action]
@@ -59,7 +62,7 @@ class HedgeMG(exp3mg.Exp3MG):
 
             # finally updates the weight
             # print('q(s,a), r, f, x, ~x = %.3f, %3f, %.3f, %.3f, %.3f' % (self.q[s][a], future, reward, x, scaled_x))
-            self.weights[s][action] *= math.exp(self.gamma * scaled_x / n)
+            self.weights[s][action] *= math.exp(gamma * scaled_x / n)
             # print(self.weights[s])
 
 
