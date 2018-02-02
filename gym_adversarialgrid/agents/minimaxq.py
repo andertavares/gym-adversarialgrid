@@ -5,39 +5,6 @@ import nash
 import scipy
 
 
-# several methods to solve a game with gambit. @author: Daniel Kneipp
-
-
-def solve_support(game, errf):
-    try:
-        return np.absolute(list(game.support_enumeration())[0][0].round(9))
-    except IndexError as e:
-        return errf(game, e)
-
-
-def solve_vertex(game, errf1, errf2):
-    try:
-        return np.absolute(list(game.vertex_enumeration())[0][0].round(9))
-    except scipy.spatial.qhull.QhullError as e:
-        return errf1(game, e)
-    except IndexError as e:
-        return errf2(game, e)
-
-
-def solve_lemke(game, errf1, errf2, errf3, errf4):
-    try:
-        s = np.absolute(list(game.lemke_howson(0))[0].round(9))
-    except Exception as e:
-        return errf4(game, e)
-    if np.NaN in s:
-        return errf1(game, ValueError('There is a NaN on the equilibria'))
-    if all(i == 0 for i in s):
-        return errf2(game, ValueError('All equilibria values are 0'))
-    if len(qmatrix) != len(s):
-        return errf3(game, ValueError('Number of equilibria value don\'t match with qmatrix size'))
-    return s
-
-
 class MinimaxQ(tabular.TabularQAgent):
     """
     Implementation of MinimaxQ (Littman1994)
