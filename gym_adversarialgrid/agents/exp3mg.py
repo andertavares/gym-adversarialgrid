@@ -20,6 +20,14 @@ class Exp3MG(tabular.TabularQAgent):
     Auer, P., Cesa-Bianchi, N., Freund, Y., & Schapire, R. E. (2002).
     The nonstochastic multiarmed bandit problem.
     Society for Industrial and Applied Mathematics, 32(1), 48–77.
+
+    TODO: replace categorical draw with multinomial: np.random.multinomial(num_draws, probabilities)
+    or np.random.choice:
+
+    aa_milne_arr = ['pooh', 'rabbit', 'piglet', 'Christopher']
+    np.random.choice(aa_milne_arr, 5, p=[0.5, 0.1, 0.1, 0.3])
+
+    TODO: read parameters from config dict
     """
 
     def __init__(self, *args, **kwargs):
