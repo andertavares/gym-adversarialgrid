@@ -27,7 +27,6 @@ class Exp3MG(tabular.TabularQAgent):
     aa_milne_arr = ['pooh', 'rabbit', 'piglet', 'Christopher']
     np.random.choice(aa_milne_arr, 5, p=[0.5, 0.1, 0.1, 0.3])
 
-    TODO: read parameters from config dict
     """
 
     def __init__(self, *args, **kwargs):
@@ -145,7 +144,9 @@ class Exp3MG_1995(Exp3MG):
     def __init__(self, *args, **kwargs):
         super(Exp3MG_1995, self).__init__(*args, **kwargs)
 
-        self.alpha = kwargs['alpha'] if 'alpha' in kwargs else 0.2
+        self.config['alpha'] = 0.2  # sets a default value= kwargs['alpha'] if 'alpha' in kwargs else 0.2
+        self.config.update(kwargs)
+        print("Params: %s", self.config)
 
     def calculate_policy(self, state):
         """
@@ -155,9 +156,9 @@ class Exp3MG_1995(Exp3MG):
         """
         # short aliases
         s = state  # s stands for state
-        g = self.gamma  # g stands for gamma
+        g = self.config['gamma']  # g stands for gamma
         n = self.action_space.n  # n stands for the number of actions
-        a = self.alpha
+        a = self.config['alpha']
         pi_s = self.policy[state]  # pi_s stands for the policy in state s
         weights = self.weights[state]
         # print(weights)
@@ -177,12 +178,15 @@ class Exp3MG_1995(Exp3MG):
         pi_sp = self.calculate_policy(sprime)
         q = self.q  # alias for the action value function
         n = self.action_space.n  # the number of actions
+        lrn_rate = self.config['learning_rate']
+        discount = self.config['discount']
+        gamma = self.config['gamma']
 
         # estimation of the expected value of s' -- it is zero if current state is terminal
         future = sum([pi_sp[aprime] * value for aprime, value in enumerate(q[sprime])]) if not done else 0
 
         # minimax-Q-like update:
-        q[s][a] = q[s][a] + self.lrn_rate * (reward + self.discount * future - q[s][a])
+        q[s][a] = q[s][a] + lrn_rate * (reward + discount * future - q[s][a])
 
         x = q[s][a]
 
@@ -196,7 +200,7 @@ class Exp3MG_1995(Exp3MG):
             print("WARNING! scaled_x=%f out of bounds!" % scaled_x)
 
         # weights the value by its probability -- estimates the reward...
-        x_hat = (self.gamma / n) * (scaled_x / self.policy[s][a])
+        x_hat = (gamma / n) * (scaled_x / self.policy[s][a])
 
         # finally updates the weight
         # print('q(s,a), r, f, x, ~x, ^x = %.3f, %3f, %.3f, %.3f, %.3f, %.3f' % (self.q[s][a], future, reward, x, scaled_x, x_hat))
