@@ -53,18 +53,18 @@ class MinimaxQ(tabular.TabularQAgent):
     def __init__(self, opp_action_space, *args, **kwargs):
         super(MinimaxQ, self).__init__(*args, **kwargs)
 
-        self.max_rwd = kwargs['maxrwd'] if 'maxrwd' in kwargs else 1
+        max_rwd = kwargs['maxrwd'] if 'maxrwd' in kwargs else 1.0
 
         self.opp_action_space = opp_action_space
 
         # initializes action values optimistically
         # outer level must be a comprehension, otherwise matrix rows will only be a reference to the first
         self.q = defaultdict(
-            lambda: [[self.max_rwd] * opp_action_space.n for _ in range(self.action_space.n)]
+            lambda: [[max_rwd] * opp_action_space.n for _ in range(self.action_space.n)]
         )
 
         # initializes the state values also optimistically
-        self.v = defaultdict(lambda: self.max_rwd)
+        self.v = defaultdict(lambda: max_rwd)
 
         # initializes the policy (equiprobable)
         self.policy = defaultdict(
@@ -98,8 +98,6 @@ class MinimaxQ(tabular.TabularQAgent):
 
         # updates the policy and state-value function for this state
         self.update_policy(s)
-        # print(['%.3f' % w for w in self.weights])
-        # print(['%.3f' % w for w in Exp3.policy(self.weights)])
 
     def update_policy(self, state):
         """
@@ -126,7 +124,34 @@ class MinimaxQ(tabular.TabularQAgent):
         # solves the game using Gambit's functions
         matrix = np.array(self.q[state])  # np.array([v.values() for k, v in self.q[state].items()])
         game = nash.Game(matrix)
-        policy = solve_support(game, solve_lemke_prepared)
+        # policy = solve_support(game, solve_lemke_prepared)
+        policy = None
+        # tries first with support enumeration:
+        try:
+            policy = np.absolute(list(game.support_enumeration())[0][0].round(9))
+        except RuntimeError as e:
+            print("Could not solve with support enumeration, will try another method.", e)
+
+            try:
+                policy = np.absolute(list(game.vertex_enumeration())[0][0].round(9))
+            # except (scipy.spatial.qhull.QhullError, IndexError) as e:
+            except RuntimeError as e:
+                print("Could not solve with vertex enumeration, will try another method.", e)
+
+                try:
+                    policy = np.absolute(list(game.lemke_howson(0))[0].round(9))
+                except Exception as e:
+                    print("Could not solve with Lemke-Howson", e)
+                if np.NaN in policy:
+                    print("There is a NaN on the equilibria")
+                    policy = None
+                if all(i == 0 for i in policy):
+                    print('All equilibria values are 0')
+                    policy = None
+                if self.action_space.n != len(policy):
+                    print("Policy length does not match number of actions!")
+                    policy = None
+
         if policy is not None:
             # updates the policy for the given state
             self.policy[state] = policy
