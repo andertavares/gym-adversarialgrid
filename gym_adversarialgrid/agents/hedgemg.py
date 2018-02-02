@@ -79,7 +79,10 @@ class HedgeMG_1995(HedgeMG):
     def __init__(self, *args, **kwargs):
         super(HedgeMG_1995, self).__init__(*args, **kwargs)
 
-        self.alpha = kwargs['alpha'] if 'alpha' in kwargs else 0.2
+        self.config['alpha'] = 0.2  # sets a default value
+        self.config.update(kwargs)
+        print("Params: %s", self.config)
+
         self.weights = defaultdict(
             lambda: [1.0 / self.action_space.n] * self.action_space.n
         )
@@ -89,12 +92,14 @@ class HedgeMG_1995(HedgeMG):
         pi_sp = self.calculate_policy(sprime)
         q = self.q  # alias for the action value function
         n = self.action_space.n  # the number of actions
+        discount = self.config['discount']
+        lrn_rate = self.config['learning_rate']
 
         # estimation of the expected value of s' -- it is zero if current state is terminal
         future = sum([pi_sp[aprime] * value for aprime, value in enumerate(q[sprime])]) if not done else 0
 
         # minimax-Q-like update:
-        q[s][a] = q[s][a] + self.lrn_rate * (reward + self.discount * future - q[s][a])
+        q[s][a] = q[s][a] + lrn_rate * (reward + discount * future - q[s][a])
 
         for action in range(self.action_space.n):
             x = q[s][action]
