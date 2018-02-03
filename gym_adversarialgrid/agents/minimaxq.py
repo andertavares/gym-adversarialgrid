@@ -75,50 +75,45 @@ class MinimaxQ(tabular.TabularQAgent):
         :return:
         """
 
-        solve_vertex_prepared = lambda game, e: solve_vertex(
-            game,
-            mark_qmatrix_to_dump,
-            mark_qmatrix_to_dump
-        )
-        solve_lemke_prepared = lambda game, e: solve_lemke(
-            game,
-            solve_vertex_prepared,
-            solve_vertex_prepared,
-            solve_vertex_prepared,
-            solve_vertex_prepared
-        )
-
         # solves the game using Gambit's functions
         matrix = np.array(self.q[state])  # np.array([v.values() for k, v in self.q[state].items()])
         game = nash.Game(matrix)
         # policy = solve_support(game, solve_lemke_prepared)
         policy = None
-        # tries first with support enumeration:
+
+        # begin: tries to solve the game with several methods
         try:
-            policy = np.absolute(list(game.support_enumeration())[0][0].round(9))
-        except RuntimeError as e:
-            print("Could not solve with support enumeration, will try another method.", e)
+            policy = np.absolute(list(game.lemke_howson(0))[0].round(9))
 
-            try:
-                policy = np.absolute(list(game.vertex_enumeration())[0][0].round(9))
-            # except (scipy.spatial.qhull.QhullError, IndexError) as e:
+            if np.NaN in policy:
+                print("Problem with Lemke-Howson: There is a NaN on the equilibria")
+                policy = None
+            if all(i == 0 for i in policy):
+                print('Problem with Lemke-Howson: All equilibria values are 0')
+                policy = None
+            if self.action_space.n != len(policy):
+                print("Problem with Lemke-Howson: Policy length does not match number of actions")
+                policy = None
+        except Exception as e:
+            print("Could not solve with Lemke-Howson. Error: ", e)
+            policy = None
+
+        # if Lemke-Howson fails, tries the other methods:
+        if policy is None:
+            try:  # support enumeration
+                policy = np.absolute(list(game.support_enumeration())[0][0].round(9))
             except RuntimeError as e:
-                print("Could not solve with vertex enumeration, will try another method.", e)
+                print("Could not solve with support enumeration, will try another method.", e)
 
-                try:
-                    policy = np.absolute(list(game.lemke_howson(0))[0].round(9))
-                except Exception as e:
-                    print("Could not solve with Lemke-Howson", e)
-                if np.NaN in policy:
-                    print("There is a NaN on the equilibria")
-                    policy = None
-                if all(i == 0 for i in policy):
-                    print('All equilibria values are 0')
-                    policy = None
-                if self.action_space.n != len(policy):
-                    print("Policy length does not match number of actions!")
-                    policy = None
+                try:  # if support enumeration fails, tries vertex enumeration
+                    policy = np.absolute(list(game.vertex_enumeration())[0][0].round(9))
+                # except (scipy.spatial.qhull.QhullError, IndexError) as e:
+                except RuntimeError as e:
+                    print("Could not solve with vertex enumeration, will try another method.", e)
 
+        # end: tried to solve the game with several methods
+
+        # now tests if the game has been solved by any method:
         if policy is not None:
             # updates the policy for the given state
             self.policy[state] = policy
@@ -133,7 +128,7 @@ class MinimaxQ(tabular.TabularQAgent):
             # it is determined by the opponent action that minimizes my expected action value
             self.v[s] = min([sum([self.q[s][a][o] * pi[s][a] for a in range(n_actions)]) for o in range(n_opp_actions)])
 
-        else:
+        else:  # game has not been solved, won't update policy
             print("WARNING: Malformed policy calculated. Won't update")
 
     def greedy_policy(self):
