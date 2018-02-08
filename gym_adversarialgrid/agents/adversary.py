@@ -1,5 +1,5 @@
 from gym_adversarialgrid.agents.agent import LearningAgent
-
+from collections import defaultdict
 
 class Random(LearningAgent):
     """
@@ -30,6 +30,14 @@ class Random(LearningAgent):
         """
         pass
 
+    def greedy_policy(self):
+        """
+        There is no 'greedy policy' for a random method,
+        all actions have the same probability
+        :return:
+        """
+        return defaultdict(lambda: 0)
+
 
 class Fixed(LearningAgent):
     """
@@ -58,3 +66,6 @@ class Fixed(LearningAgent):
         :return:
         """
         pass
+
+    def greedy_policy(self):
+        return defaultdict(lambda: self.action)

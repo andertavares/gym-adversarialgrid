@@ -51,6 +51,15 @@ class AdversarialGrid(grid.Grid):
         INVERT: "Invert"
     }
 
+    """
+    This array can be used to print the greedy policy of the opponent
+    """
+    opponent_action_desc = {
+        NOOP: " ",
+        DEFLECT: "D",
+        INVERT: "I"
+    }
+
     # no-ops don't change action
     no_ops = {
         grid.LEFT: grid.LEFT,
@@ -109,6 +118,31 @@ class AdversarialGrid(grid.Grid):
 
         else:
             self.opponent = OPPONENTS[opponent](self.observation_space, self.opp_action_space, **kwargs)
+
+    def print_opponent_greedy_policy(self, outstream=sys.stdout):
+        """
+        Prints the opponent greedy policy
+        :return:
+        """
+        # alias
+        '''
+        names = self.opponent_action_desc
+        policy = self.opponent.greedy_policy()
+
+        # the 'world' where cells are replaced with the action described by the policy
+        desc = self.desc.tolist()
+        desc = [[names[policy[(r, c)]] for c, _ in enumerate(line)] for r, line in enumerate(desc)]
+
+        outstream.write("_" * (self.ncols + 2) + '\n')
+        outstream.write("\n".join('|%s|' % ''.join(line) for line in desc) + '\n')
+        outstream.write("‾" * (self.ncols + 2) + '\n\n')
+        # ^possible issue with overline character (Unicode: U+203E)
+        '''
+
+        self.print_deterministic_policy(
+            self.opponent.greedy_policy(),
+            action_names=self.opponent_action_desc
+        )
 
     def _step(self, a):
         """

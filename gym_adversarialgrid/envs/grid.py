@@ -138,15 +138,17 @@ class Grid(gym.Env):
 
         return new_row, new_col
 
-    def print_deterministic_policy(self, policy, outstream=sys.stdout):
+    def print_deterministic_policy(self, policy, outstream=sys.stdout, action_names=None):
         """
         Prints a deterministic policy in the grid world
         :param policy: dict(observation -> action)
         :param outstream: the output stream to print into
+        :param action_names: list with the char to appear on screen for each action index,
+        defaults to self.action_names if not informed
         :return:
         """
         # alias
-        names = self.action_names
+        names = self.action_names if action_names is None else action_names
 
         # the 'world' where cells are replaced with the action described by the policy
         desc = self.desc.tolist()
