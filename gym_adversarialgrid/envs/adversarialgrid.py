@@ -5,6 +5,9 @@ from gym import utils
 from six import StringIO
 import gym_adversarialgrid.envs.grid as grid
 import gym_adversarialgrid.agents.adversary as adversary
+import gym_adversarialgrid.agents.tabular as tabular
+import gym_adversarialgrid.agents.minimaxq as minimaxq
+import gym_adversarialgrid.agents.hedgemg as hedgemg
 
 # actions for the adversary
 NOOP = 0
@@ -14,6 +17,9 @@ DEFLECT = 2
 OPPONENTS = {
     "Random": adversary.Random,
     "Fixed": adversary.Fixed,
+    "QLearning": tabular.TabularQAgent,
+    "MinimaxQ": minimaxq.MinimaxQ,
+    "Hedge": hedgemg.HedgeMG,
 }
 
 
@@ -89,9 +95,20 @@ class AdversarialGrid(grid.Grid):
 
         super(AdversarialGrid, self).__init__(params['desc'], params['map'])
 
+        self.opp_name = opponent
 
         self.opp_action_space = gym.spaces.Discrete(2)  # NOOP/DEFLECT
-        self.opponent = OPPONENTS[opponent](self.observation_space, self.opp_action_space, **kwargs)
+
+        # MinimaxQ has a special treatment:
+        if opponent == 'MinimaxQ':
+            # opp_action space and action_space are swapped because MMQ must play the opponent
+            self.opponent = minimaxq.MinimaxQ(
+                self.observation_space, self.opp_action_space,
+                self.action_space, **kwargs
+            )
+
+        else:
+            self.opponent = OPPONENTS[opponent](self.observation_space, self.opp_action_space, **kwargs)
 
     def _step(self, a):
         """
@@ -99,6 +116,9 @@ class AdversarialGrid(grid.Grid):
         :param a:the action to execute (an integer)
         :return: tuple(state, reward, done, info)
         """
+        # stores current state
+        s = self.current_state
+
         # opponent's action
         o = self.opponent.act(self.current_state)
 
@@ -107,6 +127,9 @@ class AdversarialGrid(grid.Grid):
         # implements the resulting action
         self.current_state = self.safe_exec(self.current_state, resulting_action)
         row, col = self.current_state  # just an alias
+
+        # stores the next state
+        sprime = self.current_state
 
         # retrieves the tile of current coordinates (' ', 'G' or 'H')
         tile = self.world[row][col]
@@ -125,6 +148,14 @@ class AdversarialGrid(grid.Grid):
             'r_name': self.action_names[resulting_action],
             "tile": '{}'.format(tile)
         }
+
+        # makes the opponent learn now, minimaxQ receives both agent and opponent actions
+        # (they are swapped and reward is negated because MinimaxQ is the opponent)
+        if self.opp_name == 'MinimaxQ':
+            self.opponent.learn(s, o, a, -reward, sprime, done)
+        else:
+            self.opponent.learn(s, o, -reward, sprime, done)
+
         return self.current_state, reward, done, info
 
     def _render(self, mode='human', close=False):
