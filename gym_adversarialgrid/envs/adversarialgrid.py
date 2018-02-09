@@ -55,7 +55,7 @@ class AdversarialGrid(grid.Grid):
     This array can be used to print the greedy policy of the opponent
     """
     opponent_action_desc = {
-        NOOP: " ",
+        NOOP: "-",
         DEFLECT: "D",
         INVERT: "I"
     }
@@ -106,7 +106,10 @@ class AdversarialGrid(grid.Grid):
 
         self.opp_name = opponent
 
-        self.opp_action_space = gym.spaces.Discrete(2)  # NOOP/DEFLECT
+        # 3 actions: NOOP/DEFLECT/INVERT
+        self.opp_action_space = gym.spaces.Discrete(
+            len(self.opponent_action_names.values())
+        )
 
         # MinimaxQ has a special treatment:
         if opponent == 'MinimaxQ':
@@ -175,6 +178,8 @@ class AdversarialGrid(grid.Grid):
             self.opponent.learn(s, o, a, -reward, sprime, done)
         else:
             self.opponent.learn(s, o, -reward, sprime, done)
+
+        print(s, self.action_names[a], self.opponent_action_desc[o], -reward, sprime)
 
         return self.current_state, reward, done, info
 
