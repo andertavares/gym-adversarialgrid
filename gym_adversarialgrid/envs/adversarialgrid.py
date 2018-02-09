@@ -179,7 +179,7 @@ class AdversarialGrid(grid.Grid):
         else:
             self.opponent.learn(s, o, -reward, sprime, done)
 
-        print(s, self.action_names[a], self.opponent_action_desc[o], -reward, sprime)
+        # print(s, self.action_names[a], self.opponent_action_desc[o], -reward, sprime)
 
         return self.current_state, reward, done, info
 
