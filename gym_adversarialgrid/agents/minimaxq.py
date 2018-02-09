@@ -102,7 +102,7 @@ class MinimaxQ(tabular.TabularQAgent):
         if policy is None:
             try:  # support enumeration
                 policy = np.absolute(list(game.support_enumeration())[0][0].round(9))
-            except RuntimeError as e:
+            except (RuntimeError, IndexError) as e:
                 print("Could not solve with support enumeration, will try another method.", e)
 
                 try:  # if support enumeration fails, tries vertex enumeration
