@@ -70,7 +70,6 @@ class MinimaxQ(tabular.TabularQAgent):
         """
         Updates the policy and value for a given state.
         Solves Q to Nash equilibrium based on Daniel Kneipp's code on StarcraftNash
-        TODO: take code with starcraftnash structures out
         :param state:
         :return:
         """
@@ -108,7 +107,7 @@ class MinimaxQ(tabular.TabularQAgent):
                 try:  # if support enumeration fails, tries vertex enumeration
                     policy = np.absolute(list(game.vertex_enumeration())[0][0].round(9))
                 # except (scipy.spatial.qhull.QhullError, IndexError) as e:
-                except RuntimeError as e:
+                except (RuntimeError, ValueError) as e:
                     print("Could not solve with vertex enumeration, will try another method.", e)
 
         # end: tried to solve the game with several methods
