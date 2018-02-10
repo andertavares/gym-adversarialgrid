@@ -1,8 +1,10 @@
 import gym
 import gym.spaces
 import sys
+import numpy as np
 from gym import utils
 from six import StringIO
+from collections import defaultdict
 import gym_adversarialgrid.envs.grid as grid
 import gym_adversarialgrid.agents.adversary as adversary
 import gym_adversarialgrid.agents.tabular as tabular
@@ -133,6 +135,23 @@ class AdversarialGrid(grid.Grid):
         self.print_deterministic_policy(
             self.opponent.greedy_policy(),
             action_names=self.opponent_action_desc
+        )
+
+    def print_combined_policies(self, agent):
+        agent_policy = agent.greedy_policy()
+
+        states = self.desc.tolist()
+        resulting_policy = defaultdict(lambda: 0)
+
+        # determines the agent and opponent actions for each state
+        # a stands for agent action and o for opponent's
+        for state, policy in agent_policy.items():
+            a = np.argmax(agent.q[state])
+            o = np.argmax(self.opponent.q[state])
+            resulting_policy[state] = self.opponent_action_effects[o][a]
+
+        self.print_deterministic_policy(
+            resulting_policy
         )
 
     def _step(self, a):
