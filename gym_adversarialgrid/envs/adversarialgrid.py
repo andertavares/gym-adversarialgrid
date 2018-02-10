@@ -138,7 +138,6 @@ class AdversarialGrid(grid.Grid):
     def print_combined_policies(self, agent):
         agent_policy = agent.greedy_policy()
 
-        states = self.desc.tolist()
         resulting_policy = defaultdict(lambda: 0)
 
         # determines the agent and opponent actions for each state
