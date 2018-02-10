@@ -43,8 +43,6 @@ class AdversarialGrid(grid.Grid):
     You receive a reward of 1 if you reach the goal, -1 if fall in a hole and -0.01 otherwise.
     There's an adversary that disturbs some moves you make.
 
-    TODO: print overlapped/resulting policies
-
     """
 
     metadata = {'render.modes': ['human', 'ansi']}
